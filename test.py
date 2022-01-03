@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- encoding: utf-8 -*-
 
+from argparse import ArgumentParser
 from logger import setup_logger
 from model import BiSeNet
 
@@ -43,8 +44,9 @@ def vis_parsing_maps(im, parsing_anno, stride, save_im=False, save_path='vis_res
 
     # Save result or not
     if save_im:
-        cv2.imwrite(save_path[:-4] +'.png', vis_parsing_anno)
-        cv2.imwrite(save_path, vis_im, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        save_path_pre = os.path.splitext(save_path)[0]
+        cv2.imwrite(save_path_pre +'.png', vis_parsing_anno)
+        cv2.imwrite(save_path_pre +'.jpg', vis_im, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
 
     # return vis_im
 
@@ -67,7 +69,7 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
     with torch.no_grad():
         for image_path in os.listdir(dspth):
             img = Image.open(osp.join(dspth, image_path))
-            image = img.resize((512, 512), Image.BILINEAR)
+            image = img.resize((512, 512), Image.BILINEAR).convert('RGB')
             img = to_tensor(image)
             img = torch.unsqueeze(img, 0)
             img = img.cuda()
@@ -79,12 +81,17 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
             vis_parsing_maps(image, parsing, stride=1, save_im=True, save_path=osp.join(respth, image_path))
 
 
+def main(args):
+    evaluate(dspth=args.input_dir, respth=args.result_dir, cp='79999_iter.pth')
 
 
-
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument('input_dir')
+    parser.add_argument('result_dir')
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    evaluate(dspth='/home/zll/data/CelebAMask-HQ/test-img', cp='79999_iter.pth')
-
+    main(parse_args())
 
